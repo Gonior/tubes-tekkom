@@ -71,7 +71,7 @@
       content : "lorem ipsum sir dolot amet"
     },
     {
-      line : 1,
+      line : "1,2",
       content : "lorem ipsum sir dolot amet"
     },
     {
@@ -136,11 +136,11 @@
           </div>
         </div>
         <div class="flex-grow w-full">
-          <div class="flex flex-col px-2 border-2 border-pink-600 rounded ml-2 overflow-y-auto h-3/4" >
+          <div class="flex flex-col px-2 border-2 border-pink-600 rounded ml-2 overflow-y-auto h-4/5" >
             <table class="relative w-full">
               <thead class="">
                 <tr class="">
-                  <th class="font-semibold w-14 text-center sticky top-0 bg-gray-200">
+                  <th class=" w-14 text-center sticky top-0 bg-gray-200">
                     line
                   </th>
                   <th class="text-left sticky top-0 bg-gray-200">

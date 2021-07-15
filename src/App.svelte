@@ -1,12 +1,111 @@
 <script>
   import Modal from './lib/Modal.svelte'
-  let codeBase = "";
+  
   let openModal = false
+  
+  import {getStringLiteral, getBlockComment, getInlineComment} from './lib/methods'
+  import {TYPE} from './lib/type'
+  let codeBase = `public class Test {
+      public static void main(String args[]) {
+          int[] numbers = {20.1,10,20,30,40,50, 10.5,};
+          String mhs = "Dedi Cahya";
+          boolean menikah = true;
+          for(int : x : numbers) {
+              System.out.print(x);            
+              system.out.print(",");        
+          }        
+          // This is comment        
+          System.out.print("\n");      
+          String [] names = {"James", "Dedi cahya", "Agung", "Firman", "Dodo"};
+          /* loop over */ 
+          for (String name : names) {
+              System.out.print(name);
+              System.out.print(",");
+          }
+      }
+  }`
+  const getLexeme = (str) => {    
+      let resultwithLine = []
+      let ln = 0;    
+      let col = 0;
+      let cols = []    
+      let lexeme = "";    
+      const KEYWORDS = [...TYPE.keywords, ...TYPE.operator, ...TYPE.other_symbols, ...TYPE.separator, ...TYPE.symbols]
+      let arrString = str.split("");
+      for (let [index, value] of arrString.entries()) {
+        if (value == "\n") {
+            ln++            
+            col = 0            
+            cols = []
+        }        
+        col++
+        
+        if (value === "*") {
+          if (arrString[index-1] === '/') lexeme +='/*'            
+          else if(arrString[index+1] === '/') lexeme += "*/"            
+          else lexeme += "*"        
+        }
+        else if (value === '/') {
+          if (arrString[index+1] !== "*" && arrString[index -1 ] !== '*') lexeme +='/'
+          else continue;        
+        } else {
+          if (value != ' ') {
+            lexeme += value;
+            cols.push(col)
+          }
+        if (index+1 < arrString.length) {
+          if (arrString[index+1] == " " || arrString[index+1] == "\n" || KEYWORDS.includes(lexeme) || KEYWORDS.includes(arrString[index+1])) {
+            if (lexeme != "") {         
+              
+              resultwithLine.push({line : {ln, cols}, value : lexeme.replace('\n', '<newline>')})
+              lexeme = ""
+              cols = []
+              }
+            }
+          }
+        }
+      }
+      resultwithLine = resultwithLine.map(v => {        
+          return {
+              line : {
+                  ln : v.line.ln,                
+                  col : v.line.cols[0]        
+              },
+              value : v.value
+          }
+      })
+      resultwithLine = resultwithLine.filter(v => v.value != " " && v.value != "")
+      // console.log(resultwithLine)
+      return lexer(resultwithLine);
+  }
+  const lexer = (array) => {
+      const result = {
+          indetifiers : [],
+          keywords : [],
+          separators : [],        
+          opertors : [],
+          literals : [],
+          comments : []
+      }
+      result.comments = [...getBlockComment(array).result.map(v => v)]    
+      array = [...getBlockComment(array).array]
+      console.log(array)
+      result.comments = [...result.comments, ...getInlineComment(array).result.map(v => v)]
+      array = [...getInlineComment(array).array]
+      console.log(array)
+      result.literals = [...getStringLiteral(array).result.map(v => v)]
+      array = [...getStringLiteral(array).array]
+      console.log(array)
+      console.log(result)
+      return result
+  }
+
   const reset = () => {
     codeBase = "";
   }
   const analys = () => {
-    openModal = !openModal
+    getLexeme(codeBase)
+    // openModal = !openModal
   }
 
   function detectionTab(e) {
