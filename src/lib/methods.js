@@ -65,24 +65,26 @@ export const getStringLiteral = (array) => {
     let exceptIndex;    
     let line;
     //step 1 mencari tanda petik ganda (pembuka)    
+    
     for (let i = 0; i < array.length; i++)  {
+        
         if (/\"/g.test(array[i].value) && !quoteDetected) {
             quoteDetected = true
             startIndex = i
             line = array[i].line
         } else if (/\"/g.test(array[i].value) && quoteDetected) {
-            temp += array[i].value
+            temp += array[i].value + " "
             lastIndex = i
             if (/<newline>/g.test(temp)) temp = "\"\\n\""
 
-            result.push({inx : {startIndex, lastIndex},value :temp, line : line.ln+1, col : line.col})
+            result.push({inx : {startIndex, lastIndex},value :temp.trim(), line : line.ln+1, col : line.col})
             temp = ""
             lastIndex = undefined
             startIndex = undefined
             quoteDetected = false
         }
         if (quoteDetected) {
-            temp += array[i].value
+            temp += array[i].value+" "
         }   
     }    
     for (let i = 0; i < array.length; i++) {

@@ -33,6 +33,7 @@ import { onMount } from 'svelte';
     let col = 0;
     let cols = []    
     let lexeme = "";    
+    let whitespace = " ";
     const KEYWORDS = [...TYPE.keywords, ...TYPE.operator, ...TYPE.other_symbols, ...TYPE.separator, ...TYPE.symbols]
     let arrString = str.split("");
     
@@ -69,14 +70,15 @@ import { onMount } from 'svelte';
         }
       }
       else {
-        if (value != ' ') {
+        if (value != whitespace) {
           lexeme += value;
           cols.push(col)
         }
         if (index+1 <= arrString.length) {
-          
-          if (KEYWORDS.includes(lexeme) || arrString[index+1] == " " || KEYWORDS.includes(arrString[index+1])) {
-            if (lexeme != "") {         
+          console.log(arrString[index+1] == whitespace,arrString[index+1])
+          if (arrString[index+1] == whitespace || KEYWORDS.includes(lexeme) || KEYWORDS.includes(arrString[index+1])) {
+            
+            if (lexeme != "") {
               resultwithLine.push({line : {ln, cols}, value : lexeme.replace('\n', '<newline>')})
               lexeme = ""
               cols = []
@@ -84,8 +86,6 @@ import { onMount } from 'svelte';
           }
         }
       }
-      
-      
     }
     
     resultwithLine = resultwithLine.map(v => {        
@@ -102,7 +102,7 @@ import { onMount } from 'svelte';
     resultwithLine = resultwithLine.map(v => {
       return {value : v.value.trim(), line : v.line}
     })
-    
+    console.log(resultwithLine)
     return lexer(resultwithLine);
   }
   const lexer = (array) => {
