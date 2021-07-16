@@ -1,117 +1,70 @@
 <script>
-  import {createEventDispatcher} from 'svelte'
+  import {createEventDispatcher, onMount} from 'svelte'
   import {scale} from 'svelte/transition'
   const dispatch = createEventDispatcher();
   export let openModal = false;
+  export let code;
+  let content = [];
+  
+  let menus = [
+    {
+      id :1, 
+      name : "Identifier",
+      active : true,
+      content : "identifiers"
+    },
+    {
+      id :2, 
+      name : "Keyword",
+      active : false,
+      content : "keywords"
+    },
+    {
+      id :3, 
+      name : "Operator",
+      active : false,
+      content : "operators"
+    },
+    {
+      id :4, 
+      name : "Literal",
+      active : false,
+      content : "literals"
+    },
+    {
+      id :5, 
+      name : "Separator",
+      active : false,
+      content : "separators"
+    },
+    {
+      id :6, 
+      name : "Comment",
+      active : false,
+      content : "comments"
+    },
+    
+  ]
+  
+  onMount(() => {
+    content = [...code[menus.find(v => v.active).content]]
+  })
+
   const closeModal = () => {
     dispatch('close', {
 			openModal : false
 		});
     openModal = !openModal
   }
-  const code = [
-    {
-      line : 1,
-      content : "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed aliquet, massa a molestie vehicula, sem nulla blandit lorem, a eleifend elit mi ac sapien. Duis pulvinar sem a arcu congue auctor. Phasellus sollicitudin tristique cursus. Praesent arcu dolor, gravida in sem non, bibendum gravida nibh. Maecenas sodales "
-    },
-    {
-      line : 1,
-      content : "lorem ipsum sir dolot amet"
-    },
-    {
-      line : 1,
-      content : "lorem ipsum sir dolot amet"
-    },
-    {
-      line : 1,
-      content : "lorem ipsum sir dolot amet"
-    },
-    {
-      line : 1,
-      content : "lorem ipsum sir dolot amet"
-    },
-    {
-      line : 1,
-      content : "lorem ipsum sir dolot amet"
-    },
-    {
-      line : 1,
-      content : "lorem ipsum sir dolot amet"
-    },
-    {
-      line : 1,
-      content : "lorem ipsum sir dolot amet"
-    },
-    {
-      line : 1,
-      content : "lorem ipsum sir dolot amet"
-    },
-    {
-      line : 1,
-      content : "lorem ipsum sir dolot amet"
-    },
-    {
-      line : 1,
-      content : "lorem ipsum sir dolot amet"
-    },
-    {
-      line : 1,
-      content : "lorem ipsum sir dolot amet"
-    },
-    {
-      line : 1,
-      content : "lorem ipsum sir dolot amet"
-    },
-    {
-      line : 1,
-      content : "lorem ipsum sir dolot amet"
-    },
-    {
-      line : 1,
-      content : "lorem ipsum sir dolot amet"
-    },
-    {
-      line : "1,2",
-      content : "lorem ipsum sir dolot amet"
-    },
-    {
-      line : 1,
-      content : "lorem ipsum sir dolot amet"
-    },
-    {
-      line : 1,
-      content : "lorem ipsum sir dolot amet"
-    },
-    {
-      line : 1,
-      content : "lorem ipsum sir dolot amet"
-    },
-    {
-      line : 1,
-      content : "lorem ipsum sir dolot amet"
-    },
-    {
-      line : 2,
-      content : "lorem ipsum sir dolot amet"
-    },
-    {
-      line : 2,
-      content : "lorem ipsum sir dolot amet"
-    },
-    {
-      line : 2,
-      content : "lorem ipsum sir dolot amet"
-    },
-    {
-      line : 1,
-      content : "lorem ipsum sir dolot amet"
-    },
-    {
-      line : 2,
-      content : "lorem ipsum sir dolot amet"
-    },
-    
-  ]
+  
+  const changeMenu = (id) => {
+    menus = [...menus.map(v=> {
+      v.active = false
+      return v
+    })]
+    menus.find(v => v.id === id).active = true
+    content = [...code[menus.find(v => v.active).content]]
+  }
 
 </script>
 {#if openModal}
@@ -130,18 +83,27 @@
       <div class="flex px-4 py-2 h-full">
         <div class="flex-none">
           <div class="flex flex-col px-4 py-2 border-2 border-pink-600 rounded space-y-2 items-start">
-            <button class="px-2 py-2 border-l-2 border-pink-600 text-pink-600 focus:outline-none block">Literal</button>
+            {#each menus as menu}
+              <button on:click={() => changeMenu(menu.id)} class="px-2 py-2 border-l-2 {menu.active ? 'border-pink-600 text-pink-600 block' : ''} focus:outline-none ">{menu.name}</button>  
+            {/each}
+            <!-- <button class="px-2 py-2 border-l-2 border-pink-600 text-pink-600 focus:outline-none block">Identifier</button>
             <button class="px-2 py-2 focus:outline-none">Keyword</button>
-            <button class="px-2 py-2 focus:outline-none">Comments</button>
+            <button class="px-2 py-2 focus:outline-none">Separator</button>
+            <button class="px-2 py-2 focus:outline-none">Operator</button>
+            <button class="px-2 py-2 focus:outline-none">Literal</button>
+            <button class="px-2 py-2 focus:outline-none">Comments</button> -->
           </div>
         </div>
         <div class="flex-grow w-full">
-          <div class="flex flex-col px-2 border-2 border-pink-600 rounded ml-2 overflow-y-auto h-4/5" >
+          <div class="flex flex-col px-2 border-2 border-pink-600 rounded ml-2 overflow-y-auto " style="height : 70vh" >
             <table class="relative w-full">
               <thead class="">
                 <tr class="">
-                  <th class=" w-14 text-center sticky top-0 bg-gray-200">
+                  <th class=" w-12 text-center sticky top-0 bg-gray-200">
                     line
+                  </th>
+                  <th class=" w-14 text-center sticky top-0 bg-gray-200">
+                    col
                   </th>
                   <th class="text-left sticky top-0 bg-gray-200">
                     Result
@@ -149,10 +111,15 @@
                 </tr>
               </thead>
               <tbody>
-                {#each code as c}
+                {#each content as c}
                 <tr>
                   <td class="text-center text-gray-400">{c.line}</td>
-                  <td>{c.content}</td>
+                  <td class="text-center text-gray-400">{c.col}</td>
+                  <td>{c.value}</td>
+                </tr>
+                {:else}
+                <tr>
+                  <td colspan="3" class="text-center text-gray-400 text-lg">Nothing to show</td>
                 </tr>
                 {/each}
               </tbody>

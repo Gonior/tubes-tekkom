@@ -1,8 +1,59 @@
-export const getKeywords = () => {
-    console.log('hallo dunia tipu tipu')
+import {TYPE} from './type'
+
+export const getKeywords = (arr) => {
+    const result = []
+    const arrIndex = []
+    
+    arr.forEach((e, index) => {
+        try {
+            if (TYPE.keywords.includes(e.value.trim())) {
+                result.push({value : e.value.trim(), line : e.line.ln + 1, col : e.line.col})
+                arrIndex.push(index)
+            }
+        } catch (err) {}
+        
+    });
+    arr = arr.filter((v, index) => !arrIndex.includes(index))
+    return {array : arr, result}
 
 }
+export const getOperators = (arr) => {
+    const result = []
+    const arrIndex = []
+    arr.forEach((e, index) => {
+        if (TYPE.operator.includes(e.value.trim())) {
+            result.push({value : e.value.trim(), line : e.line.ln + 1, col : e.line.col})
+            arrIndex.push(index)
+        }
+    });
+    arr = arr.filter((v,index) => !arrIndex.includes(index))
+    return {array : arr, result}
+}
+export const getSeparators = (arr) => {
+    const result = []
+    const arrIndex = []
+    arr.forEach((e, index) => {
+        if (TYPE.separator.includes(e.value.trim())) {
+            result.push({value : e.value.trim(), line : e.line.ln + 1, col : e.line.col})
+            arrIndex.push(index)
+        }
+    });
+    arr = arr.filter((v,index) => !arrIndex.includes(index))
+    return {array : arr, result}
+}
 
+export const getIdentifiers = (arr) => {
+    const result = []
+    const arrIndex = []
+    arr.forEach((e, index) => {
+        if (!/<newline>/gi.test(e.value.trim())) {
+            result.push({value : e.value.trim(), line : e.line.ln + 1, col : e.line.col})
+            arrIndex.push(index)
+        }
+    })
+    arr = arr.filter((v, index) => !arrIndex.includes(index))
+    return {array : arr, result}
+}
 export const getStringLiteral = (array) => {
     //goal function  : mencari string literal dan mengembalikannya, mengembalikan array tanpa ada string literal    
     let quoteDetected = false
@@ -18,11 +69,13 @@ export const getStringLiteral = (array) => {
         if (/\"/g.test(array[i].value) && !quoteDetected) {
             quoteDetected = true
             startIndex = i
-            line = array[i].line.ln+1
+            line = array[i].line
         } else if (/\"/g.test(array[i].value) && quoteDetected) {
             temp += array[i].value
             lastIndex = i
-            result.push({inx : {startIndex, lastIndex},value :temp, line : line})
+            if (/<newline>/g.test(temp)) temp = "\"\\n\""
+
+            result.push({inx : {startIndex, lastIndex},value :temp, line : line.ln+1, col : line.col})
             temp = ""
             lastIndex = undefined
             startIndex = undefined
@@ -34,20 +87,23 @@ export const getStringLiteral = (array) => {
     }    
     for (let i = 0; i < array.length; i++) {
         if (/\d/.test(array[i].value)) {
-            if (array[i+1].value.trim() === "." && /\d/.test(array[i+2].value.trim())) {
-                startIndex = i;
-                lastIndex = i + 2;
-                exceptIndex = lastIndex
-                result.push({inx : {startIndex, lastIndex},value : `${array[i].value}.${array[lastIndex].value}`, line : array[i].line.ln+1})                
-            } else if (/^[0-9]+\.?[0-9]*/.test(array[i].value.trim())) {
-                if (exceptIndex !== i && exceptIndex - 1 !== i) {
-                    arrIndex.push(i)
-                    result.push({inx : {startIndex, lastIndex},value : array[i].value, line : array[i].line.ln+1})
-                }
-            }
+            try {
+                if (array[i+1].value.trim() === "." && /\d/.test(array[i+2].value.trim())) {
+                    startIndex = i;
+                    lastIndex = i + 2;
+                    exceptIndex = lastIndex
+                    result.push({inx : {startIndex, lastIndex},value : `${array[i].value}.${array[lastIndex].value}`, line : array[i].line.ln+1, col : array[i].line.col})                
+                } else if (/^[0-9]+\.?[0-9]*/.test(array[i].value.trim())) {
+                    if (exceptIndex !== i && exceptIndex - 1 !== i) {
+                        arrIndex.push(i)
+                        result.push({inx : {startIndex, lastIndex},value : array[i].value, line : array[i].line.ln+1,col : array[i].line.col})
+                    }
+                } 
+            } catch(err) {console.log(err)}
+
         } else if (/(this|false|true|null)/g.test(array[i].value)) {
             arrIndex.push(i)
-            result.push({inx : {startIndex, lastIndex},value : array[i].value, line : array[i].line.ln+1})
+            result.push({inx : {startIndex, lastIndex},value : array[i].value, line : array[i].line.ln+1,col : array[i].line.col})
         }
         startIndex = undefined;
         lastIndex = undefined;
@@ -65,8 +121,8 @@ export const getStringLiteral = (array) => {
             if (!arrIndex.includes(i)) arrWithoutresult.push(array[i])
         }
         array = [...arrWithoutresult]
-        return {array, result}
     }
+    return {array, result}
 }
 
 export const getBlockComment = (arr) => {
@@ -76,19 +132,22 @@ export const getBlockComment = (arr) => {
     let startIndex;
     let line;
     let lastIndex;
+    
     for (let i = 0; i < arr.length; i++) {
         if (/\/\*/g.test(arr[i].value)) {
             blockCommentDetected = true
             startIndex = i
-            line = arr[i].line.ln + 1
+            line = arr[i].line
         } else if (/\*\//g.test(arr[i].value) && blockCommentDetected) {
             temp += arr[i].value
             lastIndex = i;
+            
             result.push({
                 inx : {
                     startIndex, lastIndex
                 }, 
-                line : line,
+                line : line.ln + 1,
+                col : line.col,
                 value : temp.replace(/<newline>/g,'').trim()
             })
             lastIndex = undefined
@@ -98,20 +157,16 @@ export const getBlockComment = (arr) => {
         }
         if (blockCommentDetected) temp += arr[i].value + " "
     }
-    if (result.length > 0) {
-        let sliceArray = []
+    if (result.length > 0) {   
         let arrIndex = []
-        result.map(v => {
-            for (let i = v.inx.startIndex; i <= v.inx.lastIndex; i++) {
-                arr.push(i)
+        result.forEach(a => {
+            for(let i = a.inx.startIndex; i <= a.inx.lastIndex;i++) {
+                arrIndex.push(i)
             }
         })
-        for (let i = 0; i < arr.length; i++) {
-            if(!arrIndex.includes(i)) sliceArray.push(arr[i])
-        }
-        arr = [...sliceArray]
+        arr = arr.filter((v, index )=> !arrIndex.includes(index))
     }
-    
+       
     return {array : arr, result}
 }
 export const getInlineComment = (arr) => {
@@ -122,10 +177,10 @@ export const getInlineComment = (arr) => {
     let lastIndex;
     let line;
     for (let i = 0; i < arr.length; i++) {
-        if (/\/\//.test(arr[i].value)) {
+        if (/\/\//g.test(arr[i].value)) {
             blockCommentDetected = true
-
-            line = arr[i].line.ln + 1
+            startIndex = i
+            line = arr[i].line
         } else if (/<newline>/g.test(arr[i].value) && blockCommentDetected) {
             temp += arr[i].value
             lastIndex = i;
@@ -134,7 +189,8 @@ export const getInlineComment = (arr) => {
                     startIndex,
                     lastIndex
                 },
-                line : line, 
+                line : line.ln+1, 
+                col : line.col,
                 value : temp.replace(/<newline>/g,'').trim()
             })
             lastIndex = undefined
@@ -145,23 +201,17 @@ export const getInlineComment = (arr) => {
             }
             if (blockCommentDetected) temp += arr[i].value + " "
     }
-        if (result.length > 0) {
-        let sliceArray = []            
-        let arrIndex = []            
-        result.map(v => {
-            for (let i = v.inx.startIndex; i <= v.inx.lastIndex; i++) {
-                arr.push(i)
-            }            
+    if (result.length > 0) {  
+        
+        let arrIndex = []
+        result.forEach(a => {
+            for(let i = a.inx.startIndex; i <= a.inx.lastIndex;i++) {
+                arrIndex.push(i)
+            }
         })
-        for (let i = 0; i < arr.length; i++) {                
-            if(!arrIndex.includes(i)) sliceArray.push(arr[i])            
-        }            
-        arr = [...sliceArray]        
+        arr = arr.filter((v, index )=> !arrIndex.includes(index))
     }
+    
     return {array : arr, result}
-}
-export const getLiteral = (array) => {        
-    let result = [];        
-    let literalRegex = /[true|false|\d]/g
 }
 

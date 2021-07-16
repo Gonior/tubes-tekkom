@@ -1,113 +1,174 @@
 <script>
   import Modal from './lib/Modal.svelte'
-  
-  let openModal = false
-  
-  import {getStringLiteral, getBlockComment, getInlineComment} from './lib/methods'
+  import {getStringLiteral, getBlockComment, getInlineComment, getKeywords, getOperators, getSeparators, getIdentifiers} from './lib/methods'
   import {TYPE} from './lib/type'
-  let codeBase = `public class Test {
-      public static void main(String args[]) {
-          int[] numbers = {20.1,10,20,30,40,50, 10.5,};
-          String mhs = "Dedi Cahya";
-          boolean menikah = true;
-          for(int : x : numbers) {
-              System.out.print(x);            
-              system.out.print(",");        
-          }        
-          // This is comment        
-          System.out.print("\n");      
-          String [] names = {"James", "Dedi cahya", "Agung", "Firman", "Dodo"};
-          /* loop over */ 
-          for (String name : names) {
-              System.out.print(name);
-              System.out.print(",");
-          }
-      }
-  }`
+import { onMount } from 'svelte';
+  let code = {};
+  let openModal = false
+  let codeBase = ""
+
+  // let codeBase = `public class Test {
+  //     public static void main(String args[]) {
+  //         int[] numbers = {20.1,10,20,30,40,50, 10.5,};
+  //         String mhs = "Dedi Cahya";
+  //         boolean menikah = true;
+  //         for(int : x : numbers) {
+  //             System.out.print(x);            
+  //             system.out.print(",");        
+  //         }        
+  //         // This is comment        
+  //         System.out.print("\n");      
+  //         String [] names = {"James", "Dedi cahya", "Agung", "Firman", "Dodo"};
+  //         /* loop over */ 
+  //         /* loop over */ 
+  //         for (String name : names) {
+  //             System.out.print(name);
+  //             System.out.print(",");
+  //         }
+  //     }
+  // }`
   const getLexeme = (str) => {    
-      let resultwithLine = []
-      let ln = 0;    
-      let col = 0;
-      let cols = []    
-      let lexeme = "";    
-      const KEYWORDS = [...TYPE.keywords, ...TYPE.operator, ...TYPE.other_symbols, ...TYPE.separator, ...TYPE.symbols]
-      let arrString = str.split("");
-      for (let [index, value] of arrString.entries()) {
-        if (value == "\n") {
-            ln++            
-            col = 0            
-            cols = []
-        }        
-        col++
-        
-        if (value === "*") {
-          if (arrString[index-1] === '/') lexeme +='/*'            
-          else if(arrString[index+1] === '/') lexeme += "*/"            
-          else lexeme += "*"        
-        }
-        else if (value === '/') {
-          if (arrString[index+1] !== "*" && arrString[index -1 ] !== '*') lexeme +='/'
-          else continue;        
-        } else {
-          if (value != ' ') {
-            lexeme += value;
-            cols.push(col)
-          }
-        if (index+1 < arrString.length) {
-          if (arrString[index+1] == " " || arrString[index+1] == "\n" || KEYWORDS.includes(lexeme) || KEYWORDS.includes(arrString[index+1])) {
-            if (lexeme != "") {         
-              
+    let resultwithLine = []
+    let ln = 0;    
+    let col = 0;
+    let cols = []    
+    let lexeme = "";    
+    const KEYWORDS = [...TYPE.keywords, ...TYPE.operator, ...TYPE.other_symbols, ...TYPE.separator, ...TYPE.symbols]
+    let arrString = str.split("");
+    
+    for (let [index, value] of arrString.entries()) {
+      if (value == "\n") {
+          ln++            
+          col = 0            
+          cols = []
+      }        
+      col++
+      
+      if (value === "*") {
+        if (arrString[index-1] === '/') lexeme +='/*'            
+        else if(arrString[index+1] === '/') lexeme += "*/"            
+        else if (/\d/g.test(arrString[index+1])) {
+          cols.push(col)
+          lexeme += "*"
+          if (lexeme != "") {         
               resultwithLine.push({line : {ln, cols}, value : lexeme.replace('\n', '<newline>')})
               lexeme = ""
               cols = []
-              }
+          }
+          continue
+        }
+        else lexeme += "*"
+      }
+      else if (value === '/') {
+        if (arrString[index+1] !== "*" && arrString[index -1 ] !== '*') {
+          lexeme +='/'
+        }
+        else {
+          cols.push(col)
+          continue;
+        }
+      }
+      else {
+        if (value != ' ') {
+          lexeme += value;
+          cols.push(col)
+        }
+        if (index+1 <= arrString.length) {
+          
+          if (KEYWORDS.includes(lexeme) || arrString[index+1] == " " || KEYWORDS.includes(arrString[index+1])) {
+            if (lexeme != "") {         
+              resultwithLine.push({line : {ln, cols}, value : lexeme.replace('\n', '<newline>')})
+              lexeme = ""
+              cols = []
             }
           }
         }
       }
-      resultwithLine = resultwithLine.map(v => {        
-          return {
-              line : {
-                  ln : v.line.ln,                
-                  col : v.line.cols[0]        
-              },
-              value : v.value
-          }
-      })
-      resultwithLine = resultwithLine.filter(v => v.value != " " && v.value != "")
-      // console.log(resultwithLine)
-      return lexer(resultwithLine);
+      
+      
+    }
+    
+    resultwithLine = resultwithLine.map(v => {        
+        return {
+            line : {
+                ln : v.line.ln,                
+                col : v.line.cols[0]        
+            },
+            value : v.value
+        }
+    })
+    
+    resultwithLine = resultwithLine.filter(v => !!v.value.trim())
+    resultwithLine = resultwithLine.map(v => {
+      return {value : v.value.trim(), line : v.line}
+    })
+    
+    return lexer(resultwithLine);
   }
   const lexer = (array) => {
       const result = {
-          indetifiers : [],
+          identifiers : [],
           keywords : [],
           separators : [],        
-          opertors : [],
+          operators : [],
           literals : [],
           comments : []
       }
-      result.comments = [...getBlockComment(array).result.map(v => v)]    
-      array = [...getBlockComment(array).array]
-      console.log(array)
-      result.comments = [...result.comments, ...getInlineComment(array).result.map(v => v)]
-      array = [...getInlineComment(array).array]
-      console.log(array)
-      result.literals = [...getStringLiteral(array).result.map(v => v)]
-      array = [...getStringLiteral(array).array]
-      console.log(array)
-      console.log(result)
+
+      
+      let commentsBlock = getBlockComment(array)
+      result.comments = [...commentsBlock.result]    
+      array = [...commentsBlock.array]
+      
+      let inlineComments = getInlineComment(array)
+      result.comments = [...result.comments, ...inlineComments.result]
+      array = [...inlineComments.array]
+      
+      let literals = getStringLiteral(array)
+      result.literals = literals && [...literals.result.map(v => {return {value : v.value, line : v.line, col :v.col}})]
+      array = literals && [...literals.array]
+
+      let keywords = getKeywords(array)
+      result.keywords = [...keywords.result]
+      array = [...keywords.array]
+      
+      let operators = getOperators(array)
+      result.operators = [...operators.result]
+      array = [...operators.array]
+      
+      let separators = getSeparators(array)
+      result.separators = [...separators.result]
+      array = [...separators.array]
+      
+      let identifiers = getIdentifiers(array)
+      result.identifiers = [...identifiers.result]
+      array = [...identifiers.array]
+      
+
       return result
   }
-
+  onMount(() => {
+    if (localStorage.getItem("sourceCode")) codeBase = JSON.parse(localStorage.getItem("sourceCode"))
+  })
   const reset = () => {
     codeBase = "";
   }
+  
   const analys = () => {
-    getLexeme(codeBase)
-    // openModal = !openModal
+    if (codeBase) {
+      code = getLexeme(codeBase)
+      openModal = !openModal  
+      
+    }
+    else alert("No java code detected")
+    
   }
+  
+  const saveToLocal=() => {
+    localStorage.setItem("sourceCode",JSON.stringify(codeBase))
+    codeBase = JSON.parse(localStorage.getItem("sourceCode"))
 
+  }
   function detectionTab(e) {
     if (e.keyCode === 9 || e.which === 9) {
       e.preventDefault()
@@ -116,13 +177,16 @@
       this.selectionEnd = s+1
     }
   }
+  
 </script>
 
 <main class="h-screen p-4">
-  <Modal code={codeBase} {openModal} on:close={(e) => openModal = e.detail.openModal }/>
+  {#if openModal}
+    <Modal {code} {openModal} on:close={(e) => openModal = e.detail.openModal }/>
+  {/if}
   <div class="flex h-full flex-col space-y-2">
     <div class="flex justify-between items-center"> 
-      <h1 class="text-gray-400 font-semibold text-xl">Compiler Java With Javascript</h1>
+      <h1 class="text-gray-400 font-semibold text-xl">Scanner Java With Javascript</h1>
       <div class="space-x-2 flex">
         <button on:click={reset} class="no-tap-highlighting py-2 px-4 rounded border-pink-600 border-2 bg-transparent hover:border-pink-700 flex focus:outline-none items-center space-x-1">
           <span>Reset</span>
@@ -135,7 +199,7 @@
       </div>
     </div>
     <div class="h-full">
-      <textarea on:keydown={detectionTab} bind:value={codeBase} class="resize-none h-full w-full p-2 focus:outline-none focus:ring-pink-600 rounded ring-2 ring-gray-400" placeholder="enter java code here"></textarea>
+      <textarea on:keyup={saveToLocal} on:keydown={detectionTab} bind:value={codeBase} class="resize-none h-full w-full p-2 focus:outline-none focus:ring-pink-600 rounded ring-2 ring-gray-400" placeholder="enter java code here"></textarea>
     </div>
   </div>
   
@@ -143,4 +207,5 @@
 <style >
 
 </style>
+
 
