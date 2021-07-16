@@ -150,7 +150,8 @@ import { onMount } from 'svelte';
   onMount(() => {
     if (localStorage.getItem("sourceCode")) codeBase = JSON.parse(localStorage.getItem("sourceCode"))
   })
-  const reset = () => {
+  const reset = () => { 
+    localStorage.setItem("sourceCode", "")
     codeBase = "";
   }
   
@@ -188,7 +189,7 @@ import { onMount } from 'svelte';
     <div class="flex justify-between items-center"> 
       <h1 class="text-gray-400 font-semibold text-xl">Scanner Java With Javascript</h1>
       <div class="space-x-2 flex">
-        <button on:click={reset} class="no-tap-highlighting py-2 px-4 rounded border-pink-600 border-2 bg-transparent hover:border-pink-700 flex focus:outline-none items-center space-x-1">
+        <button on:click={() => reset()} class="no-tap-highlighting py-2 px-4 rounded border-pink-600 border-2 bg-transparent hover:border-pink-700 flex focus:outline-none items-center space-x-1">
           <span>Reset</span>
           <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 17.29A8 8 0 105.06 11M3 6l2 5 5-2" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></svg>
         </button>
