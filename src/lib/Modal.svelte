@@ -1,6 +1,5 @@
 <script>
   import {createEventDispatcher, onMount} from 'svelte'
-  import {scale} from 'svelte/transition'
   const dispatch = createEventDispatcher();
   export let openModal = false;
   export let code;
@@ -45,10 +44,10 @@
     },
     
   ]
-  
-  onMount(() => {
-    content = [...code[menus.find(v => v.active).content]]
-  })
+  $: content = [...code[menus.find(v => v.active).content]]
+  // onMount(() => {
+    
+  // })
 
   const closeModal = () => {
     dispatch('close', {
@@ -68,14 +67,14 @@
 
 </script>
 {#if openModal}
-<div class="absolute inset-0 overflow-hidden  z-10" transition:scale={{duration : 200}}>
-  <div class="flex flex-col h-screen bg-gray-200">
+  <div class="flex flex-col h-full">
     <div class="flex-none">
-      <div class="px-4 pt-4 flex justify-between items-center "> 
+      <div class="flex justify-between items-center "> 
         <h1 class="text-gray-400 font-semibold text-xl">Result of Analysis</h1>  
-        <button on:click="{closeModal}" class="no-tap-highlighting py-2 px-4 rounded bg-pink-600 hover:bg-pink-700 flex text-white focus:outline-none items-center space-x-1">
-          <svg class="h-5 w-5"xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 19l-7-7 7-7M3 12h18"/></svg>
-          <span>Back</span>
+        <button on:click="{closeModal}" class="text-gray-400 hover:text-gray-600 py-2 px-4">
+          <!-- <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 19l-7-7 7-7M3 12h18"/></svg> -->
+          <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 19L5 5M19 5L5 19"/></svg>
+          
         </button>
       </div>
     </div>
@@ -129,7 +128,7 @@
       </div>
     </div>
   </div>
-</div>
+
 {/if}
 
 <style>

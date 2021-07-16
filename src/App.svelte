@@ -28,83 +28,72 @@ import { onMount } from 'svelte';
   //     }
   // }`
   const getLexeme = (str) => {    
-    let resultwithLine = []
+    let resultwithLine = []    
     let ln = 0;    
-    let col = 0;
+    let col = 0;    
     let cols = []    
-    let lexeme = "";    
+    let lexeme = ""; 
     let whitespace = " ";
-    const KEYWORDS = [...TYPE.keywords, ...TYPE.operator, ...TYPE.other_symbols, ...TYPE.separator, ...TYPE.symbols]
+    const KEYWORDS = [...TYPE.keywords, ...TYPE.operator, ...TYPE.other_symbols, ...TYPE.separator, ...TYPE.symbols]    
     let arrString = str.split("");
-    
-    for (let [index, value] of arrString.entries()) {
-      if (value == "\n") {
-          ln++            
-          col = 0            
-          cols = []
-      }        
-      col++
-      
-      if (value === "*") {
-        if (arrString[index-1] === '/') lexeme +='/*'            
-        else if(arrString[index+1] === '/') lexeme += "*/"            
-        else if (/\d/g.test(arrString[index+1])) {
-          cols.push(col)
-          lexeme += "*"
-          if (lexeme != "") {         
-              resultwithLine.push({line : {ln, cols}, value : lexeme.replace('\n', '<newline>')})
-              lexeme = ""
-              cols = []
-          }
-          continue
-        }
-        else lexeme += "*"
-      }
-      else if (value === '/') {
-        if (arrString[index+1] !== "*" && arrString[index -1 ] !== '*') {
-          lexeme +='/'
-        }
-        else {
-          cols.push(col)
-          continue;
-        }
-      }
-      else {
-        if (value != whitespace) {
-          lexeme += value;
-          cols.push(col)
-        }
-        if (index+1 <= arrString.length) {
-          console.log(arrString[index+1] == whitespace,arrString[index+1])
-          if (arrString[index+1] == whitespace || KEYWORDS.includes(lexeme) || KEYWORDS.includes(arrString[index+1])) {
-            
-            if (lexeme != "") {
-              resultwithLine.push({line : {ln, cols}, value : lexeme.replace('\n', '<newline>')})
-              lexeme = ""
-              cols = []
+    for (let [index, value] of arrString.entries()) {        
+        if (value == "\n") {
+            ln++
+            col = 0
+            cols = []        
+        }        
+        col++
+        if (value === "*") {
+            if (arrString[index-1] === '/') lexeme +='/*'
+            else if(arrString[index+1] === '/') lexeme += "*/"
+            else {
+              lexeme += "*"
+              cols.push(col)
+              if (arrString[index+1] === whitespace || KEYWORDS.includes(lexeme) || KEYWORDS.includes(arrString[index+1])) {        
+                    if (lexeme != "") {
+                        resultwithLine.push({line : {ln, cols}, value : lexeme.replace('\n', '<newline>')})
+                        lexeme = ""
+                        cols = []
+                    }
+                }
             }
-          }
-        }
-      }
+        } else if (value === '/') {
+            if (arrString[index+1] !== "*" && arrString[index -1 ] !== '*') lexeme +='/'
+            else continue;
+        } else {
+            if (value != '') {    
+                lexeme += value;
+                
+                cols.push(col)
+            }
+            if (index+1 <= arrString.length) {    
+                if (arrString[index+1] === whitespace || KEYWORDS.includes(lexeme) || KEYWORDS.includes(arrString[index+1])) {        
+                    if (lexeme != "") {
+                        resultwithLine.push({line : {ln, cols}, value : lexeme.replace('\n', '<newline>')})
+                        lexeme = ""
+                        cols = []
+                    }
+                }
+            }        
+        }    
     }
-    
     resultwithLine = resultwithLine.map(v => {        
         return {
-            line : {
-                ln : v.line.ln,                
-                col : v.line.cols[0]        
+            line : {    
+                ln : v.line.ln,    
+                col : v.line.cols[0]
             },
-            value : v.value
-        }
+            value : v.value        
+        }   
     })
     
-    resultwithLine = resultwithLine.filter(v => !!v.value.trim())
+    resultwithLine = resultwithLine.filter(v => !!v.value.trim())
     resultwithLine = resultwithLine.map(v => {
-      return {value : v.value.trim(), line : v.line}
+      return {value : v.value, line : v.line}
     })
-    console.log(resultwithLine)
+       
     return lexer(resultwithLine);
-  }
+}
   const lexer = (array) => {
       const result = {
           identifiers : [],
@@ -114,8 +103,6 @@ import { onMount } from 'svelte';
           literals : [],
           comments : []
       }
-
-      
       let commentsBlock = getBlockComment(array)
       result.comments = [...commentsBlock.result]    
       array = [...commentsBlock.array]
@@ -153,12 +140,17 @@ import { onMount } from 'svelte';
   const reset = () => { 
     localStorage.setItem("sourceCode", "")
     codeBase = "";
+    openModal = false
   }
   
   const analys = () => {
     if (codeBase) {
       code = getLexeme(codeBase)
-      openModal = !openModal  
+      if (!!openModal) {
+        code = getLexeme(codeBase)
+        
+        
+      } else openModal = !openModal
       
     }
     else alert("No java code detected")
@@ -181,17 +173,16 @@ import { onMount } from 'svelte';
   
 </script>
 
-<main class="h-screen p-4">
-  {#if openModal}
-    <Modal {code} {openModal} on:close={(e) => openModal = e.detail.openModal }/>
-  {/if}
-  <div class="flex h-full flex-col space-y-2">
+<main class="h-screen p-2 flex">
+  
+  <div class="flex h-full flex-col px-2 space-y-2 transition-width {openModal ? "w-1/2" : "w-full"}">
     <div class="flex justify-between items-center"> 
       <h1 class="text-gray-400 font-semibold text-xl">Scanner Java With Javascript</h1>
       <div class="space-x-2 flex">
         <button on:click={() => reset()} class="no-tap-highlighting py-2 px-4 rounded border-pink-600 border-2 bg-transparent hover:border-pink-700 flex focus:outline-none items-center space-x-1">
           <span>Reset</span>
           <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 17.29A8 8 0 105.06 11M3 6l2 5 5-2" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></svg>
+          
         </button>
         <button on:click="{analys}" class="no-tap-highlighting py-2 px-4 rounded bg-pink-600 hover:bg-pink-700 flex text-white focus:outline-none items-center space-x-1">
           <span>Analysis</span>
@@ -202,6 +193,11 @@ import { onMount } from 'svelte';
     <div class="h-full">
       <textarea on:keyup={saveToLocal} on:keydown={detectionTab} bind:value={codeBase} class="resize-none h-full w-full p-2 focus:outline-none focus:ring-pink-600 rounded ring-2 ring-gray-400" placeholder="enter java code here"></textarea>
     </div>
+  </div>
+  <div class="flex h-full flex-col space-y-2 transition-width {openModal ? "w-1/2 px-2" : "w-0"}">
+    {#if openModal}
+      <Modal {code} {openModal} on:close={(e) => openModal = e.detail.openModal }/>
+    {/if}
   </div>
   
 </main>

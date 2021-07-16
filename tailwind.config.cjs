@@ -17,7 +17,11 @@ module.exports = {
 		},
 	},
 	theme: {
-		extend: {},
+		extend: {
+			transitionProperty : {
+				'width' : 'width'
+			}
+		},
 	},
 	variants: {
 		extend: {},
